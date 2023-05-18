@@ -16,7 +16,6 @@ const ImageGallery = ({images, onClick}) => (
     </ul>
   )
 
-
 export default ImageGallery;
 
 ImageGallery.propTypes = {

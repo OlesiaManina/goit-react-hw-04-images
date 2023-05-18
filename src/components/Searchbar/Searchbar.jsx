@@ -1,43 +1,26 @@
-import React from 'react';
+import { useState } from "react";
 import css from './Searchbar.module.css';
 import { BsFillSearchHeartFill } from 'react-icons/bs';
+import PropTypes from 'prop-types';
 
-export class Searchbar extends React.Component {
-  state = {
-    imgName: '',
-  }
-
-  handleChange = (e) => {
-    const {value} = e.currentTarget;
-        this.setState({
-          imgName: value,
-        })
-  }
-
-  handleSubmit = (e) => {
+export const Searchbar = ({onSubmit}) => {
+  const [imgName, setImgName] = useState('');
+  
+  const handleSubmit = (e) => {
     e.preventDefault();
-    this.props.onSubmit(this.state.imgName);
-    this.reset();
+    onSubmit(imgName);
   }
-
-  reset = () => {
-    this.setState({
-    imgName: '',
-    })
-  }
-
-  render() {
 
     return (
       <header className={css.searchbar}>
-        <form className={css.form} onSubmit={this.handleSubmit}>
+        <form className={css.form} onSubmit={handleSubmit}>
           <button type="submit" className={css.button}>
             <BsFillSearchHeartFill width="40" fill='black'>Search</BsFillSearchHeartFill>
           </button>
       
           <input
             className={css.input}
-            onChange={this.handleChange}
+            onChange={(e) => setImgName(e.currentTarget.value)}
             name='imgName'
             type="text"
             autoComplete="off"
@@ -49,6 +32,9 @@ export class Searchbar extends React.Component {
       )
   }
   
-} 
 
 export default Searchbar;
+
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func,
+}

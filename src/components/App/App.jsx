@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from "react";
 import { Audio } from 'react-loader-spinner';
 import Searchbar from '../Searchbar/Searchbar';
 import ImageGallery from '../ImageGallery/ImageGallery';
@@ -6,79 +6,65 @@ import Button from '../Button/Button';
 import imagesAPI from '../services/images-api';
 import Modal from '../Modal/Modal'
 
-export class App extends React.Component {
-  state = {
-    imgName: '',
-    images: [],
-    pageNumber: 1,
-    id: null, 
-    largeImageURL: null,
-    isLoading: false,
-    showModal: false,
-    loadMore: null,
-  }
+export const App = () => {
+  const [imgName, setImgName] = useState('');
+  const [images, setImages] = useState([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [id, setId] = useState(null);
+  const [largeImageURL, setLargeImageURL] = useState(null);
+  const [isLoading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [loadMore, setLoadMore] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.imgName !== this.state.imgName || prevState.pageNumber !== this.state.pageNumber) {
-     try {
-        this.onUpdate();
-     } catch (error) {
-        console.log(error);
-     } 
-  } 
-}
+  useEffect(() => {
+    if (!imgName) {
+      return;
+    }
+    setLoading(true);
 
-   onUpdate = async () => {
-    const {pageNumber, imgName, loadMore} = this.state;
-    try {
-      this.setState({isLoading: true})
+    const fetchGallery = async () => {
+      try {
       const response = await imagesAPI.fetchImages(pageNumber, imgName);
       const totalHits = response.data.totalHits;
       const fetchedImages = response.data.hits;
-      this.setState((prevState) => ({images: [...prevState.images, ...fetchedImages], 
-          loadMore: pageNumber < Math.ceil(totalHits / 12)}))
-    console.log(loadMore);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.setState({isLoading: false})
-    }
-  }
-
-  onLoadMore = () => {
-    this.setState((prevState) => {
-      if (prevState.images.length !== 0) {
-        return ({pageNumber: prevState.pageNumber + 1})
+      const isCollectionFinished = pageNumber < Math.ceil(totalHits / 12)
+      setImages((prevState) => [...prevState, ...fetchedImages])
+      setLoadMore(isCollectionFinished);
+      setLoading(false);
+      } catch (error) {
+        console.log(error);
       }
+    }
+ 
+    fetchGallery();
+  }, [ imgName, pageNumber]);
+
+  const onLoadMore = () => {
+    setPageNumber((prevValue) => {
+      return prevValue + 1
     })
   }
 
-  // reset = () => {
-  //   this.setState({
-  //   imgName: '',
-  //   })
-  // }
-
-  toggleModal = () => {
-    this.setState(({showModal}) => ({showModal: !showModal}))
+  const toggleModal = () => {
+    setShowModal((prevValue) => !prevValue)
   }
 
-  formSubmitHendler = name => {
-    this.setState({imgName: name})
-    // this.reset();
+  const formSubmitHendler = (name) => {
+    setImgName(name);
+    setPageNumber(1);
+    setImages([]);
+    setLoadMore(null);
   }
 
-  openModal = (id, largeImageURL) => {
-    this.setState({id: id, largeImageURL: largeImageURL})
-    this.toggleModal();
+  const openModal = (id, largeImageURL) => {
+    setId(id);
+    setLargeImageURL(largeImageURL)
+    toggleModal();
   }
 
-
-  render() {
-    const {images, isLoading, showModal, id, largeImageURL, loadMore} = this.state;
     return (
       <div>
-      <Searchbar onSubmit={this.formSubmitHendler}/>
+      <Searchbar onSubmit={formSubmitHendler}/>
       {isLoading && <Audio
         height="80"
         width="80"
@@ -86,10 +72,10 @@ export class App extends React.Component {
         color="green"
         ariaLabel="loading"
       />}
-      <ImageGallery images={images} onClick={this.openModal}/>
-      {showModal && (<Modal onClose={this.toggleModal}><img src={largeImageURL} alt={id} width="600"/></Modal>)}
-      {loadMore? <Button onClick={this.onLoadMore}/> : ''}
+      <ImageGallery images={images} onClick={openModal}/>
+      {showModal && (<Modal onClose={toggleModal}><img src={largeImageURL} alt={id} width="600"/></Modal>)}
+      {loadMore? <Button onClick={onLoadMore}/> : ''}
       </div>
     );
   }
-};
+
